@@ -20,16 +20,16 @@ namespace PlayerControl
         /// <summary>
         /// Gets the joystick.
         /// </summary>
-        public ref readonly MinimumVirtualJoyStick Joystick => ref _joystick;
+        public MinimumVirtualJoyStick Joystick => _joystick;
 
         /// <summary>
         /// Gets the sprint button.
         /// </summary>
-        public ref readonly MinimumHoldButton SprintButton => ref _sprintButton;
+        public MinimumHoldButton SprintButton => _sprintButton;
 
         /// <summary>
         /// Gets the jump button.
         /// </summary>
-        public ref readonly Button JumpButton => ref _jumpButton;
+        public Button JumpButton => _jumpButton;
     }
 }

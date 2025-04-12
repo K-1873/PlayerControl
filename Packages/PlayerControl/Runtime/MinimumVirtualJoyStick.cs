@@ -40,7 +40,7 @@ namespace PlayerControl
         /// <summary>
         /// The distance from the onscreen control's center of origin, around which the control can move.
         /// </summary>
-        public ref float MovementRange => ref _movementRange;
+        public float MovementRange => _movementRange;
 
         /// <inheritdoc />
         void IPointerDownHandler.OnPointerDown(PointerEventData eventData)

@@ -40,14 +40,14 @@ namespace PlayerControl
         private new ITransform _transform;
         private IWarp _warp;
 
-        public ref readonly Animator Animator => ref _animator;
-        public ref readonly PlayerInput PlayerInput => ref _playerInput;
-        public ref readonly MoveControl MoveControl => ref _moveControl;
-        public ref readonly JumpControl JumpControl => ref _jumpControl;
-        public ref readonly GroundCheck GroundCheck => ref _groundCheck;
-        public ref readonly TpsCameraControl CameraControl => ref _cameraControl;
-        public ref readonly ITransform Transform => ref _transform;
-        public ref readonly IWarp Warp => ref _warp;
+        public Animator Animator => _animator;
+        public PlayerInput PlayerInput => _playerInput;
+        public MoveControl MoveControl => _moveControl;
+        public JumpControl JumpControl => _jumpControl;
+        public GroundCheck GroundCheck => _groundCheck;
+        public TpsCameraControl CameraControl => _cameraControl;
+        public ITransform Transform => _transform;
+        public IWarp Warp => _warp;
 
         /// <summary>
         /// The event that is triggered when the player jumps.
