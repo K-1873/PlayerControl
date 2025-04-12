@@ -23,31 +23,31 @@ namespace PlayerControl
     [RequireComponent(typeof(TpsCameraControl))]
     public class PlayerController : MonoBehaviour
     {
-        private readonly Lazy<AnimHashConstants> constants = new (static () => new AnimHashConstants());
+        private readonly Lazy<AnimHashConstants> _constants = new (static () => new AnimHashConstants());
 
         [SerializeField]
-        private Animator animator;
+        private Animator _animator;
         [SerializeField]
-        private PlayerInput playerInput;
+        private PlayerInput _playerInput;
         [SerializeField]
-        private MoveControl moveControl;
+        private MoveControl _moveControl;
         [SerializeField]
-        private JumpControl jumpControl;
+        private JumpControl _jumpControl;
         [SerializeField]
-        private GroundCheck groundCheck;
+        private GroundCheck _groundCheck;
         [SerializeField]
-        private TpsCameraControl cameraControl;
-        private new ITransform transform;
-        private IWarp warp;
+        private TpsCameraControl _cameraControl;
+        private new ITransform _transform;
+        private IWarp _warp;
 
-        public ref readonly Animator Animator => ref animator;
-        public ref readonly PlayerInput PlayerInput => ref playerInput;
-        public ref readonly MoveControl MoveControl => ref moveControl;
-        public ref readonly JumpControl JumpControl => ref jumpControl;
-        public ref readonly GroundCheck GroundCheck => ref groundCheck;
-        public ref readonly TpsCameraControl CameraControl => ref cameraControl;
-        public ref readonly ITransform Transform => ref transform;
-        public ref readonly IWarp Warp => ref warp;
+        public ref readonly Animator Animator => ref _animator;
+        public ref readonly PlayerInput PlayerInput => ref _playerInput;
+        public ref readonly MoveControl MoveControl => ref _moveControl;
+        public ref readonly JumpControl JumpControl => ref _jumpControl;
+        public ref readonly GroundCheck GroundCheck => ref _groundCheck;
+        public ref readonly TpsCameraControl CameraControl => ref _cameraControl;
+        public ref readonly ITransform Transform => ref _transform;
+        public ref readonly IWarp Warp => ref _warp;
 
         /// <summary>
         /// The event that is triggered when the player jumps.
@@ -57,7 +57,7 @@ namespace PlayerControl
         /// <summary>
         /// The constants for the animation hash.
         /// </summary>
-        public AnimHashConstants Constants => constants.Value;
+        public AnimHashConstants Constants => _constants.Value;
 
         /// <summary>
         /// Whether the player is performing a double jump.
@@ -154,12 +154,12 @@ namespace PlayerControl
         {
             if (TryGetComponent(out BrainBase brain))
             {
-                (transform, warp) = (brain, brain);
+                (_transform, _warp) = (brain, brain);
             }
             else
             {
-                TryGetComponent(out transform);
-                TryGetComponent(out warp);
+                TryGetComponent(out _transform);
+                TryGetComponent(out _warp);
             }
             PlayerInput.onActionTriggered += context => OnActionTriggered(context);
             JumpControl.OnJump.AddListener(OnJump);
