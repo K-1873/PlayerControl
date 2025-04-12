@@ -23,8 +23,6 @@ namespace PlayerControl
     [RequireComponent(typeof(TpsCameraControl))]
     public class PlayerController : MonoBehaviour
     {
-        private readonly Lazy<AnimHashConstants> _constants = new (static () => new AnimHashConstants());
-
         [SerializeField]
         private Animator _animator;
         [SerializeField]
@@ -53,11 +51,6 @@ namespace PlayerControl
         /// The event that is triggered when the player jumps.
         /// </summary>
         public ref readonly UnityEngine.Events.UnityEvent OnJumped => ref JumpControl.OnJump;
-
-        /// <summary>
-        /// The constants for the animation hash.
-        /// </summary>
-        public AnimHashConstants Constants => _constants.Value;
 
         /// <summary>
         /// Whether the player is performing a double jump.
@@ -167,13 +160,13 @@ namespace PlayerControl
 
         protected virtual void Update()
         {
-            Animator.SetFloat(Constants.Speed, CurrentSpeed);
-            Animator.SetBool(Constants.IsGround, IsOnGround);
+            Animator.SetFloat(AnimHashConstants.Speed, CurrentSpeed);
+            Animator.SetBool(AnimHashConstants.IsGround, IsOnGround);
 
             Vector3 currentDirection = LocalDirection;
             float deltaTime = Time.deltaTime;
-            Animator.SetFloat(Constants.Forward, currentDirection.z, MoveDampTime, deltaTime);
-            Animator.SetFloat(Constants.SideStep, currentDirection.x, MoveDampTime, deltaTime);
+            Animator.SetFloat(AnimHashConstants.Forward, currentDirection.z, MoveDampTime, deltaTime);
+            Animator.SetFloat(AnimHashConstants.SideStep, currentDirection.x, MoveDampTime, deltaTime);
         }
 
         protected virtual void OnActionTriggered(in CallbackContext context)
@@ -200,6 +193,6 @@ namespace PlayerControl
             }
         }
 
-        protected virtual void OnJump() => Animator.Play(IsDoubleJump ? Constants.DoubleJump : Constants.JumpStart);
+        protected virtual void OnJump() => Animator.Play(IsDoubleJump ? AnimHashConstants.DoubleJump : AnimHashConstants.JumpStart);
     }
 }
