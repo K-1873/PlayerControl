@@ -2,7 +2,6 @@ using System;
 using System.Runtime.CompilerServices;
 using Unity.TinyCharacterController.Check;
 using Unity.TinyCharacterController.Control;
-using Unity.TinyCharacterController.Core;
 using Unity.TinyCharacterController.Interfaces.Components;
 using Unity.TinyCharacterController.Interfaces.Core;
 using UnityEngine;
@@ -23,41 +22,35 @@ namespace PlayerControl
     [RequireComponent(typeof(TpsCameraControl))]
     public class PlayerController : MonoBehaviour
     {
-        private readonly Lazy<AnimHashConstants> constants = new (static () => new AnimHashConstants());
-
         [SerializeField]
-        private Animator animator;
+        private Animator _animator;
         [SerializeField]
-        private PlayerInput playerInput;
+        private PlayerInput _playerInput;
         [SerializeField]
-        private MoveControl moveControl;
+        private MoveControl _moveControl;
         [SerializeField]
-        private JumpControl jumpControl;
+        private JumpControl _jumpControl;
         [SerializeField]
-        private GroundCheck groundCheck;
+        private GroundCheck _groundCheck;
         [SerializeField]
-        private TpsCameraControl cameraControl;
-        private new ITransform transform;
-        private IWarp warp;
-
-        public ref readonly Animator Animator => ref animator;
-        public ref readonly PlayerInput PlayerInput => ref playerInput;
-        public ref readonly MoveControl MoveControl => ref moveControl;
-        public ref readonly JumpControl JumpControl => ref jumpControl;
-        public ref readonly GroundCheck GroundCheck => ref groundCheck;
-        public ref readonly TpsCameraControl CameraControl => ref cameraControl;
-        public ref readonly ITransform Transform => ref transform;
-        public ref readonly IWarp Warp => ref warp;
+        private TpsCameraControl _cameraControl;
+        private ITransform _transform;
+        private IWarp _warp;
 
         /// <summary>
-        /// The event that is triggered when the player jumps.
+        /// <see cref="Animator"/> component of the player.
         /// </summary>
-        public ref readonly UnityEngine.Events.UnityEvent OnJumped => ref JumpControl.OnJump;
+        public Animator Animator => _animator;
 
         /// <summary>
-        /// The constants for the animation hash.
+        /// <see cref="PlayerInput"/> component of the player.
         /// </summary>
-        public AnimHashConstants Constants => constants.Value;
+        public PlayerInput PlayerInput => _playerInput;
+
+        /// <summary>
+        /// Whether the player can perform a double jump.
+        /// </summary>
+        public bool CanDoubleJump { get; set; } = true;
 
         /// <summary>
         /// Whether the player is performing a double jump.
@@ -65,7 +58,7 @@ namespace PlayerControl
         public bool IsDoubleJump
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => JumpControl.AerialJumpCount >= 1;
+            get => CanDoubleJump && _jumpControl.AerialJumpCount >= 1;
         }
 
         /// <summary>
@@ -74,7 +67,7 @@ namespace PlayerControl
         public float CurrentSpeed
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => MoveControl.CurrentSpeed;
+            get => _moveControl.CurrentSpeed;
         }
 
         /// <summary>
@@ -83,7 +76,7 @@ namespace PlayerControl
         public bool IsOnGround
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => GroundCheck.IsOnGround;
+            get => _groundCheck.IsOnGround;
         }
 
         /// <summary>
@@ -92,7 +85,7 @@ namespace PlayerControl
         public Vector3 LocalDirection
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => MoveControl.LocalDirection;
+            get => _moveControl.LocalDirection;
         }
 
         /// <summary>
@@ -100,10 +93,8 @@ namespace PlayerControl
         /// </summary>
         public Vector3 WorldPosition
         {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => Transform.Position;
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            set => Warp.Warp(value);
+            get => (_transform ??= GetComponent<ITransform>()).Position;
+            set => (_warp ??= GetComponent<IWarp>()).Warp(value);
         }
 
         /// <summary>
@@ -111,10 +102,8 @@ namespace PlayerControl
         /// </summary>
         public Quaternion WorldRotation
         {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => Transform.Rotation;
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            set => Warp.Warp(value);
+            get => (_transform ??= GetComponent<ITransform>()).Rotation;
+            set => (_warp ??= GetComponent<IWarp>()).Warp(value);
         }
 
         /// <summary>
@@ -125,81 +114,47 @@ namespace PlayerControl
         /// </summary>
         public bool UnlockMove { get; set; } = true;
 
-        /// <summary>
-        /// "Move" action name.
-        /// </summary>
-        public const string Move = nameof(Move);
-
-        /// <summary>
-        /// "Sprint" action name.
-        /// </summary>
-        public const string Sprint = nameof(Sprint);
-
-        /// <summary>
-        /// "Jump" action name.
-        /// </summary>
-        public const string Jump = nameof(Jump);
-
-        /// <summary>
-        /// "Look" action name.
-        /// </summary>
-        public const string Look = nameof(Look);
-
-        /// <summary>
-        /// The damper time for the move animation.
-        /// </summary>
-        public const float MoveDampTime = 0.1f;
-
-        protected virtual void Start()
+        private void Start()
         {
-            if (TryGetComponent(out BrainBase brain))
-            {
-                (transform, warp) = (brain, brain);
-            }
-            else
-            {
-                TryGetComponent(out transform);
-                TryGetComponent(out warp);
-            }
-            PlayerInput.onActionTriggered += context => OnActionTriggered(context);
-            JumpControl.OnJump.AddListener(OnJump);
+            _playerInput.onActionTriggered += OnActionTriggered;
+            _jumpControl.OnJump.AddListener(OnJump);
         }
 
-        protected virtual void Update()
+        private void Update()
         {
-            Animator.SetFloat(Constants.Speed, CurrentSpeed);
-            Animator.SetBool(Constants.IsGround, IsOnGround);
+            Animator.SetFloat(Constants.Hash.Speed, CurrentSpeed);
+            Animator.SetBool(Constants.Hash.IsGround, IsOnGround);
 
-            Vector3 currentDirection = LocalDirection;
-            float deltaTime = Time.deltaTime;
-            Animator.SetFloat(Constants.Forward, currentDirection.z, MoveDampTime, deltaTime);
-            Animator.SetFloat(Constants.SideStep, currentDirection.x, MoveDampTime, deltaTime);
+            var currentDirection = LocalDirection;
+            var deltaTime = Time.deltaTime;
+            const float dampTime = 0.1f;
+            Animator.SetFloat(Constants.Hash.Forward, currentDirection.z, dampTime, deltaTime);
+            Animator.SetFloat(Constants.Hash.SideStep, currentDirection.x, dampTime, deltaTime);
         }
 
-        protected virtual void OnActionTriggered(in CallbackContext context)
+        private void OnActionTriggered(InputAction.CallbackContext context)
         {
-            switch (context.ActionName)
+            Debug.Log(context.action.name);
+            switch (context.action.name)
             {
-                case Move when context.Phase is InputActionPhase.Performed or InputActionPhase.Canceled && UnlockMove:
-                    MoveControl.Move(context.Value);
+                case Constants.Action.Move when context.phase is InputActionPhase.Performed or InputActionPhase.Canceled && UnlockMove:
+                    _moveControl.Move(context.ReadValue<Vector2>());
                     break;
-                case Sprint when context.Phase is InputActionPhase.Performed:
-                    const float sprintHoldSpeed = 4.0f;
-                    MoveControl.MoveSpeed = sprintHoldSpeed;
+                case Constants.Action.Look when context.phase is InputActionPhase.Performed:
+                    _cameraControl.RotateCamera(context.ReadValue<Vector2>());
                     break;
-                case Sprint when context.Phase is InputActionPhase.Canceled:
-                    const float sprintReleasedSpeed = 1.2f;
-                    MoveControl.MoveSpeed = sprintReleasedSpeed;
+                case Constants.Action.Jump when context.phase is InputActionPhase.Started:
+                    _jumpControl.Jump();
                     break;
-                case Jump when context.Phase is InputActionPhase.Started:
-                    JumpControl.Jump();
+                case Constants.Action.Sprint when context.phase is InputActionPhase.Performed:
+                    _moveControl.MoveSpeed = 4.0f;
                     break;
-                case Look when context.Phase is InputActionPhase.Performed:
-                    CameraControl.RotateCamera(context.Value);
+                case Constants.Action.Sprint when context.phase is InputActionPhase.Canceled:
+                    _moveControl.MoveSpeed = 1.2f;
                     break;
             }
         }
 
-        protected virtual void OnJump() => Animator.Play(IsDoubleJump ? Constants.DoubleJump : Constants.JumpStart);
+        private void OnJump() => Animator.Play(IsDoubleJump ? Constants.Hash.DoubleJump : Constants.Hash.JumpStart);
     }
 }
