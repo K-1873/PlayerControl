@@ -1,4 +1,3 @@
-using System;
 using System.Runtime.CompilerServices;
 using Unity.TinyCharacterController.Check;
 using Unity.TinyCharacterController.Control;
@@ -106,38 +105,36 @@ namespace PlayerControl
             set => (_warp ??= GetComponent<IWarp>()).Warp(value);
         }
 
-        /// <summary>
-        /// Whether the player can move.
-        /// <remarks>
-        /// Jumping and looking around are still allowed.
-        /// </remarks>
-        /// </summary>
-        public bool UnlockMove { get; set; } = true;
-
         private void Start()
         {
             _playerInput.onActionTriggered += OnActionTriggered;
             _jumpControl.OnJump.AddListener(OnJump);
         }
 
+#if UNITY_ANDROID
+        private void OnEnable() => UnityEngine.InputSystem.EnhancedTouch.EnhancedTouchSupport.Enable();
+
+        private void OnDisable() => UnityEngine.InputSystem.EnhancedTouch.EnhancedTouchSupport.Disable();
+#endif
+
         private void Update()
         {
-            Animator.SetFloat(Constants.Hash.Speed, CurrentSpeed);
-            Animator.SetBool(Constants.Hash.IsGround, IsOnGround);
+            _animator.SetFloat(Constants.Hash.Speed, CurrentSpeed);
+            _animator.SetBool(Constants.Hash.IsGround, IsOnGround);
 
             var currentDirection = LocalDirection;
             var deltaTime = Time.deltaTime;
             const float dampTime = 0.1f;
-            Animator.SetFloat(Constants.Hash.Forward, currentDirection.z, dampTime, deltaTime);
-            Animator.SetFloat(Constants.Hash.SideStep, currentDirection.x, dampTime, deltaTime);
+            _animator.SetFloat(Constants.Hash.Forward, currentDirection.z, dampTime, deltaTime);
+            _animator.SetFloat(Constants.Hash.SideStep, currentDirection.x, dampTime, deltaTime);
         }
 
         private void OnActionTriggered(InputAction.CallbackContext context)
         {
-            Debug.Log(context.action.name);
+            Debug.Log($"Action triggered: {context.action.name}, Phase: {context.phase}");
             switch (context.action.name)
             {
-                case Constants.Action.Move when context.phase is InputActionPhase.Performed or InputActionPhase.Canceled && UnlockMove:
+                case Constants.Action.Move when context.phase is InputActionPhase.Performed or InputActionPhase.Canceled:
                     _moveControl.Move(context.ReadValue<Vector2>());
                     break;
                 case Constants.Action.Look when context.phase is InputActionPhase.Performed:
@@ -155,6 +152,6 @@ namespace PlayerControl
             }
         }
 
-        private void OnJump() => Animator.Play(IsDoubleJump ? Constants.Hash.DoubleJump : Constants.Hash.JumpStart);
+        private void OnJump() => _animator.Play(IsDoubleJump ? Constants.Hash.DoubleJump : Constants.Hash.JumpStart);
     }
 }
